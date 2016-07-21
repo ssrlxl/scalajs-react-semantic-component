@@ -58,7 +58,7 @@ lazy val examples = project.in(file("examples"))
 
 
 
-bootSnippet := "scalajs.semanticui.ExampleApp().main();"
+bootSnippet := "ExampleApp().main();"
 
 localUrl :=("127.0.0.1", 12345)
 
