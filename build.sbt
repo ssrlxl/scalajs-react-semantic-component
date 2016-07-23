@@ -6,7 +6,8 @@ jsDependencies += RuntimeDOM
 
 libraryDependencies ++= Seq(
   "com.github.japgolly.scalajs-react" %%% "core" % "0.11.1",
-  "org.scalaz" %%% "scalaz-core" % "7.2.4"
+  "org.scalaz" %%% "scalaz-core" % "7.2.4",
+  "com.github.japgolly.scalacss" %%% "ext-react" % "0.4.1"
 )
 
 lazy val commonSettings = Seq(
@@ -26,14 +27,16 @@ lazy val core = project.in(file("core"))
   .settings(
     libraryDependencies ++= Seq(
       "com.github.japgolly.scalajs-react" %%% "core" % "0.11.1",
-      "org.scalaz" %%% "scalaz-core" % "7.2.4"
+      "org.scalaz" %%% "scalaz-core" % "7.2.4",
+      "com.github.japgolly.scalacss" %%% "ext-react" % "0.4.1"
     )).enablePlugins(ScalaJSPlugin)
 
 lazy val examples = project.in(file("examples"))
   .settings(commonSettings: _*)
   .settings(
     libraryDependencies ++= Seq(
-      "org.scala-js" %%% "scalajs-dom" % "0.9.0"
+      "org.scala-js" %%% "scalajs-dom" % "0.9.0",
+      "com.github.japgolly.scalacss" %%% "ext-react" % "0.4.1"
     ),
     jsDependencies ++= Seq(
       "org.webjars.bower" % "react" % "15.1.0"
@@ -62,4 +65,4 @@ bootSnippet := "ExampleApp().main();"
 
 localUrl :=("127.0.0.1", 12345)
 
-refreshBrowsers <<= refreshBrowsers.triggeredBy(fullOptJS in Compile)
+refreshBrowsers <<= refreshBrowsers.triggeredBy(fastOptJS in Compile)

@@ -11,6 +11,9 @@ import japgolly.scalajs.react.{Callback, ReactComponentB}
 
 import scala.collection.mutable.Map
 
+import scalaz._
+import Scalaz._
+
 object BasicDataTable {
 
   def genTestHeaderConfig(): Array[DataTable.HeaderConfig] = {
@@ -35,16 +38,20 @@ object BasicDataTable {
 
   }
 
-  def genTestData(): Array[Map[String, String]] = {
-    val doms = for (i <- 0 to 1) yield {
+
+  def genTestData(): Tree[Map[String, String]] = {
+    val doms = for (i <- 0 to 5) yield {
       val cols = Map[String, String]()
       for (i <- 1 to 10) {
         cols("标题" + i) = "11"
       }
       cols("name") = "1"
-      cols
+      cols("level") = s"$i"
+      cols.leaf
     }
-    doms.toArray
+    Map("name" -> "root").node(
+      doms: _*
+    )
   }
 
 
