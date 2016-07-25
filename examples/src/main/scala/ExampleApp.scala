@@ -11,7 +11,6 @@ import scalaz._
 import Scalaz._
 
 
-
 import scalajs.react.semantic.elements.datatable.RegisterStyle
 
 /**
@@ -30,7 +29,8 @@ object ExampleApp extends JSApp {
     dom.document.body.appendChild(dataTableDom)
 
     AppCss.load()
-    ReactDOM.render(BasicTree(), dom.document.getElementById("basicDataTable"))
+    //ReactDOM.render(BasicTree(), dom.document.getElementById("basicDataTable"))
+    ReactDOM.render(BasicDataTable(), dom.document.getElementById("button"))
   }
 
 }

@@ -4,12 +4,20 @@ package tree
   * Created by shaoshengrong on 16/7/23.
   */
 
+import scalaz._
+import Scalaz.ToTreeOps
+
 import japgolly.scalajs.react.vdom.prefix_<^._
 
 import scalajs.react.semantic.elements.tree._
-import japgolly.scalajs.react.{Callback, ReactComponentB, BackendScope}
-
+import japgolly.scalajs.react.{BackendScope, Callback, ReactComponentB}
 import org.scalajs.dom
+
+import scala.collection.mutable.Map
+
+case class TreeItem(item: Any, children: TreeItem*) {
+  def apply(item: Any): TreeItem = this(item, Nil)
+}
 
 object BasicTree {
 
@@ -43,13 +51,25 @@ object BasicTree {
       Callback(dom.document.getElementById("treeviewcontent").innerHTML = content)
     }
 
+
     def render = {
       <.div(
-
-
         <.div(Style.treeViewDemo)(
-          Tree(
-            root = data,
+          TreeDataTable(
+            root = Map("name"->"root").node(
+              Map("name"->"1").node(
+                Map("name"->"2").leaf,
+                Map("name"->"3").leaf,
+                Map("name"->"4").leaf,
+                Map("name"->"5").leaf
+              ),
+              Map("name"->"1").node(
+                Map("name"->"2").leaf,
+                Map("name"->"3").leaf,
+                Map("name"->"4").leaf,
+                Map("name"->"5").leaf
+              )
+            ),
             openByDefault = true,
             onItemSelect = onItemSelect _,
             showSearchBox = true

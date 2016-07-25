@@ -38,16 +38,22 @@ object BasicDataTable {
 
   }
 
+  def genRowData():Map[String, String]={
+    val cols = Map[String, String]()
+    for (i <- 1 to 10) {
+      cols("标题" + i) = scala.util.Random.nextInt(5000).toString
+    }
+    cols("name") = scala.util.Random.nextInt(2000).toString
+    cols
+  }
 
   def genTestData(): Tree[Map[String, String]] = {
     val doms = for (i <- 0 to 5) yield {
-      val cols = Map[String, String]()
-      for (i <- 1 to 10) {
-        cols("标题" + i) = "11"
+      val cols = this.genRowData()
+      val leaf = for(j <- 0 to 5) yield{
+        this.genRowData().leaf
       }
-      cols("name") = "1"
-      cols("level") = s"$i"
-      cols.leaf
+      cols.node(leaf: _*)
     }
     Map("name" -> "root").node(
       doms: _*

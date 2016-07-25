@@ -3,6 +3,9 @@ package scalajs.react.semantic.elements.tree
 /**
   * Created by shaoshengrong on 16/7/23.
   */
+
+import scalaz._
+
 import scalajs.react.semantic.elements.search._
 
 import japgolly.scalajs.react.CompScope._
@@ -11,17 +14,17 @@ import japgolly.scalajs.react.vdom.prefix_<^._
 
 import scala.scalajs.js
 
-case class TreeItem(item: Any, children: TreeItem*) {
-  def apply(item: Any): TreeItem = this(item, Nil)
-}
+import scala.collection.mutable.Map
 
-object Tree {
+
+object TreeDataTable {
+
 
   trait Style {
 
     def reactTreeView = Seq[TagMod]()
 
-    def treeGroup = Seq(^.margin := 0, ^.padding := "0 0 0 14px")
+    def treeGroup = Seq(^.margin := "0 px", ^.padding := "0 0 0 14 px ")
 
     def treeItem = Seq(^.listStyleType := "none")
 
@@ -45,6 +48,16 @@ object Tree {
   }
 
 
+  def getChild(loc: TreeLoc[Map[String, String]], index: Int): Seq[TreeLoc[Map[String, String]]] = {
+    println(index)
+    val subLoc = loc.getChild(index).get
+    subLoc.isLast match {
+      case true =>
+        Seq(subLoc)
+      case false =>
+        subLoc +: this.getChild(loc, index + 1)
+    }
+  }
 
   type NodeC = DuringCallbackU[NodeProps, NodeState, NodeBackend]
 
@@ -72,7 +85,7 @@ object Tree {
 
       val tell: Callback =
         P.onItemSelect.asCbo(
-          selected.props.root.item.toString,
+          selected.props.root.getLabel.toString,
           selected.props.parent,
           selected.props.depth
         )
@@ -86,14 +99,19 @@ object Tree {
     def render(P: Props, S: State) =
       <.div(P.style.reactTreeView)(
         P.showSearchBox ?= Search(onTextChange = onTextChange),
-        TreeNode.withKey("root")(NodeProps(
-          root         = P.root,
-          open         = if (S.filterText.nonEmpty) true else P.open,
-          onNodeSelect = onNodeSelect(P),
-          filterText   = S.filterText,
-          style        = P.style,
-          filterMode   = S.filterMode
-        ))
+        <.table(
+          ^.cls := "ui celled  selectable table ",
+          <.tbody(
+            TreeNode.withKey("root")(NodeProps(
+              root = P.root.loc,
+              open = if (S.filterText.nonEmpty) true else P.open,
+              onNodeSelect = onNodeSelect(P),
+              filterText = S.filterText,
+              style = P.style,
+              filterMode = S.filterMode
+            ))
+          )
+        )
       )
   }
 
@@ -103,28 +121,31 @@ object Tree {
       P.onNodeSelect($.asInstanceOf[NodeC]) >> e.preventDefaultCB >> e.stopPropagationCB
 
     def childrenFromProps(P: NodeProps): CallbackTo[Option[Unit]] =
-      $.modState(S => S.copy(children = if (S.children.isEmpty) P.root.children else Nil))
-        .conditionally(P.root.children.nonEmpty)
+      $.modState(S => S.copy(children = if (S.children.isEmpty) getChild(P.root, P.depth) else Nil))
+        .when(P.root.hasChildren)
 
     def onTreeMenuToggle(P: NodeProps)(e: ReactEventH): Callback =
       childrenFromProps(P) >> e.preventDefaultCB >> e.stopPropagationCB
 
-    def isFilterTextExist(filterText: String, data: TreeItem): Boolean = {
-      def matches(item: TreeItem): Boolean =
-        item.item.toString.toLowerCase.contains(filterText.toLowerCase)
-
-      def loop(data: Seq[TreeItem]): Boolean =
-        data.view.exists(
-          item => if (item.children.isEmpty) matches(item) else loop(item.children)
-        )
-
-      matches(data) || loop(data.children)
+    def isFilterTextExist(filterText: String, data: Tree[Map[String, String]]): Boolean = {
+      filterText == filterText
     }
 
+    def getChild(loc: TreeLoc[Map[String, String]], index: Int): List[TreeLoc[Map[String, String]]] = {
+      val subLoc = loc.getChild(index).get
+      subLoc.isLast match {
+        case true =>
+          List(subLoc)
+        case false =>
+          subLoc :: this.getChild(loc, index + 1)
+      }
+    }
+
+
     def render(P: NodeProps, S: NodeState): ReactTag = {
-      val depth    = P.depth + 1
-      val parent   = if   (P.parent.isEmpty) P.root.item.toString
-      else s"${P.parent}<-${P.root.item.toString}"
+      val depth = P.depth + 1
+     // val parent = if (P.parent.isEmpty) P.root.pa.toString
+      //else s"${P.parent}<-${P.root.item.toString}"
 
       val treeMenuToggle: TagMod =
         if (S.children.nonEmpty)
@@ -134,7 +155,7 @@ object Tree {
             P.style.treeItemBefore,
             "▼"
           )
-        else if (P.root.children.nonEmpty && S.children.isEmpty)
+        else if (P.root.hasChildren && S.children.isEmpty)
           <.span(
             ^.onClick ==> onTreeMenuToggle(P),
             ^.key := "arrow",
@@ -143,17 +164,20 @@ object Tree {
           )
         else ""
 
-      <.li(
-        P.style.treeItem,
-        treeMenuToggle,
-        ^.key := "toggle",
-        ^.cursor := "pointer",
-        <.span(
-          S.selected ?= P.style.selectedTreeItemContent,
-          ^.onClick ==> onItemSelect(P),
-          P.root.item.toString
-        ),
-        <.ul(P.style.treeGroup)(
+     val rowDom = S.children.map{
+       loc =>
+           <.td(
+             treeMenuToggle,
+             ^.cursor := "pointer",
+             <.span(
+               S.selected ?= P.style.selectedTreeItemContent,
+               ^.onClick ==> onItemSelect(P)
+             )
+           )
+     }
+      <.tr(
+        rowDom: _*
+        /*<.td(P.style.treeGroup)(
           S.children.map(child =>
             isFilterTextExist(P.filterText, child) ?=
               TreeNode.withKey(s"$parent$depth${child.item}")(P.copy(
@@ -163,14 +187,14 @@ object Tree {
                 parent = parent,
                 filterText = P.filterText
               ))
-          ))
+          ))*/
       )
     }
   }
 
-  case class NodeState(children: Seq[TreeItem] = Nil, selected: Boolean = false)
+  case class NodeState(children: Seq[TreeLoc[Map[String, String]]] = null, selected: Boolean = false)
 
-  case class NodeProps(root: TreeItem,
+  case class NodeProps(root: TreeLoc[Map[String, String]],
                        open: Boolean,
                        depth: Int = 0,
                        parent: String = "",
@@ -180,12 +204,12 @@ object Tree {
                        filterMode: Boolean)
 
   lazy val TreeNode = ReactComponentB[NodeProps]("ReactTreeNode")
-    .initialState_P(P => if (P.open) NodeState(P.root.children) else NodeState())
+    .initialState_P(P => if (P.open) NodeState(getChild(P.root, 1)) else NodeState())
     .renderBackend[NodeBackend]
     .componentWillReceiveProps {
       case ComponentWillReceiveProps(_$, newProps) =>
-        _$.modState(_.copy(children = if (newProps.open) newProps.root.children else Nil))
-          .conditionally(newProps.filterMode)
+        _$.modState(_.copy(children = if (newProps.open) getChild(newProps.root, newProps.depth) else null))
+          .when(newProps.filterMode)
           .void
     }
     .build
@@ -195,13 +219,13 @@ object Tree {
     .renderBackend[Backend]
     .build
 
-  case class Props(root: TreeItem,
+  case class Props(root: Tree[Map[String, String]],
                    open: Boolean,
                    onItemSelect: js.UndefOr[(String, String, Int) => Callback],
                    showSearchBox: Boolean,
                    style: Style)
 
-  def apply(root: TreeItem,
+  def apply(root: Tree[Map[String, String]],
             openByDefault: Boolean = false,
             onItemSelect: js.UndefOr[(String, String, Int) => Callback] = js.undefined,
             showSearchBox: Boolean = false,
